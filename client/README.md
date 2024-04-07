@@ -1,6 +1,6 @@
 # 開始使用 Create React App
 
-這個專案項目是用[Create React App](<[text](https://github.com/facebook/create-react-app)>)創建的.
+這個專案項目是用[Create React App](https://github.com/facebook/create-react-app)創建的.
 
 ## 可使用的命令 Scripts
 
@@ -19,7 +19,7 @@
 build 會被壓縮，且文件名包含 hashes。
 你的應用準備好部署了！
 
-更多信息請查看 [deployment]([text](https://create-react-app.dev/docs/deployment/)) 部分。
+更多信息請查看 [deployment](https://create-react-app.dev/docs/deployment/) 部分。
 
 `**npm run dev**`  
 啟動開發模式下的服務器。當你進行代碼更改時，此服務器將提供實時重載功能，無需手動刷新頁面就能看到更新的結果。
