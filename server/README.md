@@ -63,8 +63,8 @@ npm run debug-win
 
 ## 設計準則 Design Rules
 
-- [SQL Style Guide]([text](https://www.sqlstyle.guide/zh-tw/))
-- [Modern SQL Style Guide]([text](https://gist.github.com/mattmc3/38a85e6a4ca1093816c08d4815fbebfb))
+- [SQL Style Guide](https://www.sqlstyle.guide/zh-tw/)
+- [Modern SQL Style Guide](https://gist.github.com/mattmc3/38a85e6a4ca1093816c08d4815fbebfb)
 
 ### 資料庫 DB
 
