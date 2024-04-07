@@ -36,7 +36,7 @@
 - 啟動專案，這將在開發模式下啟動:
 
 ```sh
-   npm start
+   npm run dev
 ```
 
 ### 後端 Express(版本號^4.18.1)
