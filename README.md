@@ -7,12 +7,12 @@
 
 ## 開發組員
 
-- 會員中心: [Wendy Zing](<[text](https://github.com/ZingWen)>)
-- 賣家中心: [Chiwen Chen](<[text](https://github.com/pollochen97)>)
-- 優惠券、新手任務、聊天室: [Shiang-Ni](<[text](https://github.com/Shiang-Ni)>)
-- 購物車、結帳: [Wendy Lai](<[text](https://github.com/opsuuu)>)
-- 商品專區: [HsinYu](<[text](https://github.com/angela041199)>)
-- 文章專區: [Kkrismamm](<[text](https://github.com/Kkrismamm)>)
+- 會員中心: [Wendy Zing]((https://github.com/ZingWen)
+- 賣家中心: [Chiwen Chen]((https://github.com/pollochen97)
+- 優惠券、新手任務、聊天室: [Shiang-Ni]((https://github.com/Shiang-Ni)
+- 購物車、結帳: [Wendy Lai]((https://github.com/opsuuu)
+- 商品專區: [HsinYu]((https://github.com/angela041199)
+- 文章專區: [Kkrismamm](https://github.com/Kkrismamm)
 
 ## 使用技術/工具 :
 
@@ -41,7 +41,7 @@
 
 ### 後端 Express(版本號^4.18.1)
 
-- 下載 Node.js(版本號 v20.10.0) [Node.js 下載傳送門](<[text](https://nodejs.org/en)>)
+- 下載 Node.js(版本號 v20.10.0) [Node.js 下載傳送門]((https://nodejs.org/en)
 - Server 資料夾安裝使用套件
 
 ```sh
