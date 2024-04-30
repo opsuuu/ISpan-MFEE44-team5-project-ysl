@@ -2,14 +2,13 @@ import express from 'express'
 const router = express.Router()
 import db from '../configs/db.mjs'
 import { v4 as uuidv4 } from 'uuid'
-import crypto from 'crypto'
+import {createHmac} from 'crypto'
 // 導入dotenv 使用 .env 檔案中的設定值 process.env
 import 'dotenv/config.js'
 import axios from 'axios'
-import queryString from 'query-string'
 // 啟用綠界物流SDK
 import ecpay_logistics from 'ecpay_logistics_nodejs'
-import session from 'express-session'
+
 
 // 取得商品對應的賣場名稱
 router.get('/shop-names', async (req, res) => {
@@ -77,7 +76,6 @@ router.post('/edit-address', async (req, res) => {
   } = req.body
 
   const { AddressType, DeliveryTimePreference } = specialPreferences
-  console.log(req.body)
 
   const buildShippingInfo = () =>
     JSON.stringify({
@@ -88,9 +86,7 @@ router.post('/edit-address', async (req, res) => {
         AddressType,
         DeliveryTimePreference,
       },
-    })
-
-  console.log(buildShippingInfo)
+    }) 
 
   // 如果找到對應地址欄位
   if (homeField && ['home1', 'home2', 'home3'].includes(homeField)) {
@@ -214,7 +210,6 @@ router.post('/create-order', async (req, res) => {
     selectedProductCoupon,
     selectedShippingCoupon,
   } = req.body
-  console.log(req.body)
 
   // 計算總優惠折抵(商品折抵金額+運費折抵金額)
   const totalDiscount = shippingDiscount + productDiscount
@@ -234,7 +229,6 @@ router.post('/create-order', async (req, res) => {
         [orderGroupUuid, paymentMethod]
       )
       const groupId = orderGroupResult.insertId
-      console.log(groupId)
 
       // 生成Linepay用的唯一識別訂單號
       const externalOrderId = `${groupId}${orderGroupUuid}`
@@ -271,7 +265,7 @@ router.post('/create-order', async (req, res) => {
         )
         // 遍歷每個賣場分組創建賣場訂單
         for (const [member_id, itemsInGroup] of Object.entries(groupedItems)) {
-          // console.log(itemsInGroup)
+          
           if (!Array.isArray(itemsInGroup)) {
             console.error(`預期 itemsInGroup 是一個陣列，取得:`, itemsInGroup)
             continue
@@ -288,7 +282,6 @@ router.post('/create-order', async (req, res) => {
             currentShippingMethod.shippingMethod === '2'
               ? 100
               : 60
-          console.log(shippingCost)
 
           // 計算訂單總價格(未使用優惠券前)
           const orderPrice =
@@ -297,7 +290,6 @@ router.post('/create-order', async (req, res) => {
               0
             ) + shippingCost
 
-          console.log(orderPrice)
           // 計算每個賣場訂單在所有訂單總額的佔比
           const proportion =
             totalOrderPrice > 0 ? orderPrice / totalOrderPrice : 0
@@ -307,7 +299,6 @@ router.post('/create-order', async (req, res) => {
 
           // 計算每個訂單實際付款的訂單總金額(使用優惠券)-先四捨五入測試
           const finalPrice = Math.round(orderPrice - discountAmount)
-          console.log(finalPrice)
 
           // 每個賣場的收件人資訊
           const shippingInfo = shippingInfos[member_id]
@@ -315,8 +306,7 @@ router.post('/create-order', async (req, res) => {
           if (!shippingInfo) {
             return res.status(400).json({ message: '缺少收件人資訊' })
           }
-          console.log(totalOrderPrice)
-          console.log(totalDiscount)
+          
 
           // 計算要傳給金流使用的實際付款總金額
           const amount = totalOrderPrice - totalDiscount
@@ -425,7 +415,6 @@ router
       }
       const amount = groupRows[0].amount
 
-      console.log(amount)
 
       // LinepayBody
       const orderId = externalOrderId
@@ -436,49 +425,38 @@ router
       const currency = 'TWD'
       const linepayBody = {
         amount,
-        productImageUrl,
-        confirmUrl,
-        productName,
         orderId,
         currency,
+        packages: [
+          {
+            id: '1',
+            amount: amount,
+            products: [
+              {
+                name: productName,
+                imageUrl: productImageUrl,
+                quantity: 1,
+                price: amount,
+              },
+            ],
+          },
+        ],
+        redirectUrls: {
+          confirmUrl: confirmUrl,
+        },
       }
-      console.log(JSON.stringify(linepayBody, null, 2))
 
-      // 製作簽章
-      const uri = '/v2/payments/request'
-      const nonce = uuidv4().toString()
-      // 使用 crypto 模組創建 HMAC SHA256 簽名並轉為 Base64
-      const channelSecret = process.env.LINE_PAY_CHANNEL_SECRET
-      const channelId = process.env.LINE_PAY_CHANNEL_ID
-      const requestBody = JSON.stringify(linepayBody)
-      const datatosign = channelSecret + uri + requestBody + nonce
 
-      const signature = crypto
-        .createHmac('sha256', channelSecret)
-        .update(datatosign)
-        .digest('base64')
-
-      console.log(signature)
-
-      // const linePayClient = createLinePayClient({
-      //   channelId: process.env.LINE_PAY_CHANNEL_ID,
-      //   channelSecretKey: process.env.LINE_PAY_CHANNEL_SECRET,
-      //   env: process.env.NODE_ENV,
-      // })
-
-      // 製作送給linepay的headers
-      const headers = {
-        'X-LINE-ChannelId': channelId,
-        'Content-Type': 'application/json',
-        'X-LINE-ChannelSecret': channelSecret,
-      }
+      // 製作加密簽章
+      const requestUri = '/v3/payments/request'
+      const headers = createSignature(linepayBody, requestUri)
       // linepay api路徑
-      const url = 'https://sandbox-api-pay.line.me/v2/payments/request'
+      const url = `https://sandbox-api-pay.line.me${requestUri}`
 
       const linepayRes = await axios.post(url, linepayBody, { headers })
-      console.log(linepayRes)
-      console.log(linepayRes.data.info.paymentUrl)
+
       if (linepayRes.data.returnCode === '0000') {
+        // res.redirect(linepayRes.data.info.paymentUrl.web)
         res.json(linepayRes.data.info.paymentUrl.web)
       } else {
         console.log('錯誤')
@@ -492,8 +470,6 @@ router
   // 後端接收 transactionId再進行確認
   .get('/check-transaction', async (req, res) => {
     const { transactionId, orderId } = req.query
-    console.log(transactionId)
-    console.log(orderId)
 
     // 從order_group取得amount
     const [orderRows] = await db.execute(
@@ -507,27 +483,24 @@ router
     }
     const amount = orderRows[0].amount
 
-    // LinepayBody
 
     // 構建Confirm API的請求
-    const confirmUrl = `https://sandbox-api-pay.line.me/v2/payments/${transactionId}/confirm`
+    const confirmUrl = `/v3/payments/${transactionId}/confirm`
+    // linepay api路徑
+    const url = `https://sandbox-api-pay.line.me${confirmUrl}`
     const linepayBody = {
       amount: amount,
       currency: 'TWD',
     }
     try {
-      const response = await axios.post(confirmUrl, linepayBody, {
-        headers: {
-          'X-LINE-ChannelId': process.env.LINE_PAY_CHANNEL_ID,
-          'X-LINE-ChannelSecret': process.env.LINE_PAY_CHANNEL_SECRET,
-          'Content-Type': 'application/json',
-        },
-      })
+      const headers = createSignature(linepayBody, url)
+      const response = await axios.post(url, linepayBody, { headers })
 
       // 確認交易成功
       if ((response.data.returnCode = '0000')) {
         // 更新訂單付款狀態
-        await db.execute(
+        await db.execute
+        (
           `UPDATE orders SET status = '已付款' WHERE external_order_id = ?`,
           [orderId]
         )
@@ -548,7 +521,6 @@ router
 // 取得會員優惠券
 router.get('/get-coupons', async (req, res) => {
   const memberId = req.query.memberId
-  // console.log(memberId)
 
   if (!memberId) {
     return res.status(400).send({ error: '找不到用戶' })
@@ -585,14 +557,12 @@ router.get('/get-seven-address', async (req, res) => {
   const create = new ecpay_logistics()
   const mapHtml = await create.query_client.expressmap(base_param)
 
-  console.log(mapHtml)
   res.render('ecpaymap', { title: '', mapHtml })
 })
 
 // 接收超商收件姓名、電話資訊
 router.post('/save-user-info', (req, res) => {
   const { name, phone, memberId } = req.body
-  console.log(req.body)
   req.session.userInfo = {
     memberId,
     name,
@@ -608,9 +578,6 @@ router.post('/return-map', async (req, res) => {
   const userInfo = req.session.userInfo || {}
   console.log(userInfo)
   const { CVSStoreID, CVSStoreName, CVSAddress } = req.body
-  const storeID = CVSStoreID
-  const storeName = CVSStoreName
-  const storeAddress = CVSAddress
 
   if (!userInfo.memberId || !userInfo.name || !userInfo.phone) {
     console.error('缺少必要的session資訊')
@@ -625,7 +592,6 @@ router.post('/return-map', async (req, res) => {
     name: CVSStoreName,
     address: CVSAddress,
   }
-  console.log(req.session)
   res.redirect(
     `http://localhost:3000/cart/checkout?storeID=${CVSStoreID}&memberId=${encodeURIComponent(memberId)}&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}&storeName=${encodeURIComponent(CVSStoreName)}&storeAddress=${encodeURIComponent(CVSAddress)}`
   )
@@ -666,13 +632,12 @@ router.get('/clear-address-session/:memberId', (req, res) => {
 router.post('/add-seven-address', async (req, res) => {
   const { memberId, shipping_method, name, phone, sevenInfo, member_id } =
     req.body
-  console.log(member_id)
   const sevenAddressInfo = JSON.stringify({
     name,
     phone,
     sevenInfo,
   })
-  console.log(sevenAddressInfo)
+  
   // 先查詢該會員是否有設置超商常用地址
   const [existingSevenAddresses] = await db.query(
     'SELECT * FROM shipping_address WHERE member_id = ? AND shipping_method = ?',

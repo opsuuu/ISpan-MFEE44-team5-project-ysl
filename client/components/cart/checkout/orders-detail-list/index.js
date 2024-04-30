@@ -9,10 +9,8 @@ import {
 import { FaAngleRight, FaGamepad, FaShippingFast } from 'react-icons/fa'
 import OrderCheckout from './order-checkout'
 import Image from 'next/image'
-import Link from 'next/link'
 import Modal from 'react-bootstrap/Modal'
 import Button from 'react-bootstrap/Button'
-import { useRouter } from 'next/router'
 
 // 優惠券星星圖
 import couponStar from '@/public/images/cart/couponStar.svg'
@@ -42,7 +40,7 @@ export default function OrdersDetailList() {
     shippingOptions,
     getFormatShippingInfos,
   } = useShipping()
-  const { memberId, memberData } = useAuth()
+  const {  memberData } = useAuth()
 
   // 存放所有優惠券id
   const [coupons, setCoupons] = useState([])
@@ -86,14 +84,6 @@ export default function OrdersDetailList() {
     setTotalShippingFee(totalShippingFee)
   }, [shippingFees])
 
-  // 從子層傳來的每個物流方式狀態
-  // const handleShippingMethodChange = (method) => {
-  //   setShippingMethods((prevMethods) => ({
-  //     ...prevMethods,
-  //     ...method,
-  //   }))
-  // }
-
   // 計算商品總金額
   const getTotalPrice = () => {
     const filterItems = cartItems.filter((item) => item.userSelect === true)
@@ -110,7 +100,6 @@ export default function OrdersDetailList() {
   // 選擇的付款方式存在狀態裡
   const handlePaymentMethodChange = (method) => {
     setPaymentMethod(method)
-    // console.log('選擇的付款方式:', method)
   }
 
   // 從後端取得用戶可使用的優惠券列表
@@ -121,7 +110,6 @@ export default function OrdersDetailList() {
       )
         .then((response) => response.json())
         .then((data) => {
-          // console.log(data)
           setCoupons(data)
         })
         .catch((error) => console.error('取得會員優惠券失敗', error))
@@ -135,7 +123,6 @@ export default function OrdersDetailList() {
 
   // 紀錄用戶暫存的優惠券
   const handleTempSelectProductCoupon = (coupon) => {
-    console.log(coupon)
     setTempSelectedProductCoupon(coupon)
   }
   const handleTempSelectShippingCoupon = (coupon) => {
@@ -210,11 +197,8 @@ export default function OrdersDetailList() {
 
   // 篩選出userSelect=true的商品
   const payingItems = cartItems.filter((item) => item.userSelect === true)
-  const router = useRouter()
 
   // 檢查所有進入付款詳情的訂單是不是都選擇配送方式
-  // console.log(shippingOptions);
-  // console.log( Object.keys(shippingOptions).length);
   const allShippingMethodsSelected = Object.keys(shippingOptions).length > 0
 
   // 結帳完成移除購物車商品
@@ -271,7 +255,6 @@ export default function OrdersDetailList() {
       selectedProductCoupon,
       selectedShippingCoupon,
     }
-    // console.log(orderData);
 
     try {
       console.log('建立訂單，付款方式:', paymentMethod)
@@ -315,7 +298,6 @@ export default function OrdersDetailList() {
               })
                 .then((response) => response.json())
                 .then((data) => {
-                  console.log(data)
                   window.location.href = `/cart/purchase?orderId=${externalOrderIdForCash}`
                 })
                 .catch((error) => {
@@ -337,7 +319,6 @@ export default function OrdersDetailList() {
               })
                 .then((response) => response.json())
                 .then((data) => {
-                  console.log(data)
                   window.location.href = data
                 })
                 .catch((error) => {
@@ -356,7 +337,6 @@ export default function OrdersDetailList() {
               })
                 .then((response) => response.json())
                 .then((data) => {
-                  console.log(data)
                   window.location.href = `/cart/purchase?orderId=${externalOrderIdForCreditCard}`
                 })
                 .catch((error) => {
@@ -364,7 +344,6 @@ export default function OrdersDetailList() {
                 })
               break
             default:
-              console.log('未定義的付款方式')
               MySwal.fire({
                 icon: 'warning',
                 text: '未定義的付款方式',
