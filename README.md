@@ -5,6 +5,12 @@
 > 打造二手 switch 遊戲片的買賣平台，網站角色為第三方電商平台，
 > 用戶是買方也是賣方，致力打造友善、安全、價格透明的買賣空間。
 
+
+## 購物車視覺展示
+![購物車頁面-訂單明細頁面](/images/localhost_3000_cart.png)
+![購物車頁面-付款詳情頁面](/images/localhost_3000_cart_checkout.png)
+![購物車頁面-訂單完成頁面](/images/localhost_3000_cart_purchase_orderId=44e407efd2-15bd-44ee-a307-920e49e9bb8c&transactionId=2024050102108238210.png)
+
 ## 開發組員
 
 - 會員中心: [Wendy Zing](https://github.com/ZingWen)
