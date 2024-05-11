@@ -2,13 +2,12 @@ import express from 'express'
 const router = express.Router()
 import db from '../configs/db.mjs'
 import { v4 as uuidv4 } from 'uuid'
-import {createHmac} from 'crypto'
+import { createHmac } from 'crypto'
 // 導入dotenv 使用 .env 檔案中的設定值 process.env
 import 'dotenv/config.js'
 import axios from 'axios'
 // 啟用綠界物流SDK
 import ecpay_logistics from 'ecpay_logistics_nodejs'
-
 
 // 取得商品對應的賣場名稱
 router.get('/shop-names', async (req, res) => {
@@ -86,7 +85,7 @@ router.post('/edit-address', async (req, res) => {
         AddressType,
         DeliveryTimePreference,
       },
-    }) 
+    })
 
   // 如果找到對應地址欄位
   if (homeField && ['home1', 'home2', 'home3'].includes(homeField)) {
@@ -265,7 +264,6 @@ router.post('/create-order', async (req, res) => {
         )
         // 遍歷每個賣場分組創建賣場訂單
         for (const [member_id, itemsInGroup] of Object.entries(groupedItems)) {
-          
           if (!Array.isArray(itemsInGroup)) {
             console.error(`預期 itemsInGroup 是一個陣列，取得:`, itemsInGroup)
             continue
@@ -306,7 +304,6 @@ router.post('/create-order', async (req, res) => {
           if (!shippingInfo) {
             return res.status(400).json({ message: '缺少收件人資訊' })
           }
-          
 
           // 計算要傳給金流使用的實際付款總金額
           const amount = totalOrderPrice - totalDiscount
@@ -415,7 +412,6 @@ router
       }
       const amount = groupRows[0].amount
 
-
       // LinepayBody
       const orderId = externalOrderId
       const productImageUrl =
@@ -445,7 +441,6 @@ router
           confirmUrl: confirmUrl,
         },
       }
-
 
       // 製作加密簽章
       const requestUri = '/v3/payments/request'
@@ -483,7 +478,6 @@ router
     }
     const amount = orderRows[0].amount
 
-
     // 構建Confirm API的請求
     const confirmUrl = `/v3/payments/${transactionId}/confirm`
     // linepay api路徑
@@ -499,8 +493,7 @@ router
       // 確認交易成功
       if ((response.data.returnCode = '0000')) {
         // 更新訂單付款狀態
-        await db.execute
-        (
+        await db.execute(
           `UPDATE orders SET status = '已付款' WHERE external_order_id = ?`,
           [orderId]
         )
@@ -637,7 +630,7 @@ router.post('/add-seven-address', async (req, res) => {
     phone,
     sevenInfo,
   })
-  
+
   // 先查詢該會員是否有設置超商常用地址
   const [existingSevenAddresses] = await db.query(
     'SELECT * FROM shipping_address WHERE member_id = ? AND shipping_method = ?',
@@ -679,5 +672,28 @@ router.post('/add-seven-address', async (req, res) => {
 router.post('/credit-card', (req, res) => {
   console.log('開始串接綠界金流')
 })
+
+function createSignature(linepayBody, requestUri) {
+  const nonce = uuidv4().toString()
+  // 使用 crypto 模組創建 HMAC SHA256 簽名並轉為 Base64
+  // Signature = Base64(HMAC-SHA256(Your ChannelSecret, (Your ChannelSecret + URI + RequestBody + nonce)))
+  const channelSecret = process.env.LINE_PAY_CHANNEL_SECRET
+  const channelId = process.env.LINE_PAY_CHANNEL_ID
+  const requestBody = JSON.stringify(linepayBody)
+  const datatosign = `${channelSecret}${requestUri}${requestBody}${nonce}`
+
+  const signature = createHmac('sha256', channelSecret)
+    .update(datatosign)
+    .digest('base64')
+
+  // 製作送給linepay的headers
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-LINE-ChannelId': channelId,
+    'X-LINE-Authorization-Nonce': nonce,
+    'X-LINE-Authorization': signature,
+  }
+  return headers
+}
 
 export default router
